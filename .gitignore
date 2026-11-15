@@ -1,0 +1,12 @@
+# Large files exceeding GitHub's 100 MB limit
+models/best_model.joblib
+*.joblib
+
+# Archives
+*.zip
+
+# Python & Jupyter cache
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/

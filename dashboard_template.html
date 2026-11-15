@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harvest & Heat — Crop Yield Under a Changing Climate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper: #F3F1E4;
+    --paper-raised: #FBFAF3;
+    --ink: #212B1E;
+    --ink-soft: #55604C;
+    --gold: #C08A2E;
+    --gold-deep: #9C6E1F;
+    --green: #3B6B4A;
+    --green-deep: #2A4E36;
+    --clay: #A6462B;
+    --line: #DBD5C0;
+    --line-strong: #C7BF9F;
+    --radius-sm: 3px;
+    --radius-md: 6px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{
+    font-family:"Fraunces", serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    margin:0;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px;}
+  section{padding:88px 0;border-bottom:1px solid var(--line);}
+  section:last-of-type{border-bottom:none;}
+  .eyebrow{
+    font-size:13px;
+    color:var(--green-deep);
+    font-weight:600;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:16px;height:1px;background:var(--green);display:inline-block;
+  }
+  p{color:var(--ink-soft);max-width:62ch;}
+  .lede{font-size:19px;line-height:1.6;}
+  a{color:var(--green-deep);}
+
+  /* HERO */
+  .hero{padding-top:64px;padding-bottom:56px;}
+  .hero-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:56px;align-items:end;}
+  .hero h1{font-size:52px;line-height:1.06;max-width:13ch;}
+  .hero .lede{margin-top:22px;max-width:46ch;}
+  .stat-row{display:flex;gap:36px;margin-top:40px;flex-wrap:wrap;}
+  .stat b{
+    display:block;font-family:"Fraunces",serif;font-size:32px;font-weight:600;
+    color:var(--green-deep);
+  }
+  .stat span{font-size:13px;color:var(--ink-soft);}
+  .hero-chart-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:22px 22px 14px;
+  }
+  .hero-chart-card .cap{font-size:12px;color:var(--ink-soft);margin-top:8px;display:flex;justify-content:space-between;}
+  .chart-box{position:relative;}
+
+  /* SECTION HEADS */
+  .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:36px;flex-wrap:wrap;}
+  .section-head h2{font-size:30px;max-width:16ch;}
+  .section-head p{margin:0;font-size:15px;}
+
+  /* CARD */
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:24px;
+  }
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:820px){.grid-2{grid-template-columns:1fr;} .hero-grid{grid-template-columns:1fr;} .hero h1{font-size:38px;}}
+
+  /* Insight callouts */
+  .callout{
+    border-left:2px solid var(--gold);
+    padding-left:18px;
+    margin-top:22px;
+  }
+  .callout b{color:var(--ink);}
+
+  /* small multiples */
+  .facet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  @media (max-width:820px){.facet-grid{grid-template-columns:repeat(2,1fr);}}
+  .facet{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;}
+  .facet h4{font-family:"IBM Plex Sans";font-size:13px;font-weight:600;margin:0 0 8px;color:var(--ink);}
+
+  /* model comparison table */
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);}
+  th{font-weight:600;color:var(--ink-soft);font-size:12px;text-transform:none;}
+  td.mono, .mono{font-family:"IBM Plex Mono",monospace;font-size:13px;}
+  tr.best td{color:var(--green-deep);font-weight:600;}
+
+  /* PREDICTOR */
+  .predictor{
+    background:var(--green-deep);
+    border-radius:8px;
+    padding:44px;
+    color:#F3F1E4;
+  }
+  .predictor .section-head h2{color:#fff;}
+  .predictor .section-head p{color:#D7DEC9;}
+  .predictor-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;}
+  @media (max-width:820px){.predictor-grid{grid-template-columns:1fr;}}
+  .field{margin-bottom:22px;}
+  .field label{
+    display:flex;justify-content:space-between;font-size:13px;font-weight:500;
+    margin-bottom:8px;color:#E7E9DA;
+  }
+  .field label .val{font-family:"IBM Plex Mono",monospace;color:#F0CE87;}
+  select, input[type=range]{
+    width:100%;
+  }
+  select{
+    padding:10px 12px;border-radius:4px;border:1px solid #4C6E56;background:#2F5A3F;color:#fff;font-family:"IBM Plex Sans";font-size:14px;
+  }
+  input[type=range]{
+    -webkit-appearance:none;height:4px;background:#4C6E56;border-radius:2px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#F0CE87;cursor:pointer;border:2px solid #2F5A3F;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:#F0CE87;cursor:pointer;border:2px solid #2F5A3F;
+  }
+  .result-card{
+    background:#2A4E36;
+    border:1px solid #4C6E56;
+    border-radius:6px;
+    padding:32px;
+    text-align:left;
+  }
+  .result-label{font-size:13px;color:#B9C6AC;}
+  .result-value{
+    font-family:"Fraunces",serif;font-weight:600;font-size:56px;color:#fff;line-height:1;margin:10px 0 4px;
+  }
+  .result-value span{font-size:22px;color:#B9C6AC;font-weight:400;}
+  .result-context{font-size:14px;color:#D7DEC9;margin-top:14px;line-height:1.5;}
+  .result-bar-track{height:8px;background:#1F3B29;border-radius:4px;margin-top:22px;overflow:hidden;}
+  .result-bar-fill{height:100%;background:linear-gradient(90deg,#C08A2E,#F0CE87);border-radius:4px;transition:width .35s ease;}
+  .result-bar-labels{display:flex;justify-content:space-between;font-size:11px;color:#98A88C;margin-top:6px;}
+  .method-note{font-size:12.5px;color:#9FB093;margin-top:22px;line-height:1.6;}
+
+  footer{padding:56px 0 80px;}
+  footer p{font-size:13px;}
+  .footer-grid{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;color:var(--ink-soft);font-size:13px;}
+  .footer-grid a{text-decoration:none;border-bottom:1px solid var(--line-strong);}
+
+  ::selection{background:#F0CE87;color:#212B1E;}
+</style>
+</head>
+<body>
+
+<div class="wrap hero">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow">Crop Yield &amp; Climate — Data Science Project</div>
+      <h1>Will the harvest keep up with the heat?</h1>
+      <p class="lede">Twenty-four years of FAO and World Bank records on ten staple crops across 101 countries, used to measure how rainfall, temperature and pesticide use actually move the yield needle — and to predict what comes next.</p>
+      <div class="stat-row">
+        <div class="stat"><b id="stat-rows">—</b><span>yield records</span></div>
+        <div class="stat"><b id="stat-countries">—</b><span>countries</span></div>
+        <div class="stat"><b id="stat-crops">—</b><span>crop types</span></div>
+        <div class="stat"><b id="stat-years">—</b><span>years tracked</span></div>
+      </div>
+    </div>
+    <div class="hero-chart-card">
+      <div class="chart-box" style="height:220px;"><canvas id="heroChart"></canvas></div>
+      <div class="cap"><span>Global average yield, all crops</span><span id="hero-delta"></span></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Three decades of harvest</h2>
+      <p>Average yield across every tracked crop and country has climbed steadily since 1990 — better seed varieties, fertiliser and irrigation outpacing any climate drag, at least so far.</p>
+    </div>
+    <div class="card">
+      <div class="chart-box" style="height:320px;"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="callout">
+      <p><b>Reading this chart:</b> the line is a simple mean across all 101 countries and 10 crops each year, so it hides enormous variation — a Wheat farm in Denmark and a Cassava plot in Chad both count once. The sections below break that variation apart.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Not all crops are equal</h2>
+      <p>Yield is measured in tonnes per hectare, and starch-heavy root crops simply weigh more per plant than grains — this is a unit-of-measurement effect, not a "better crop."</p>
+    </div>
+    <div class="card">
+      <div class="chart-box" style="height:340px;"><canvas id="cropChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What actually predicts yield</h2>
+      <p>Feature importances from the trained Random Forest, grouped by variable.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="chart-box" style="height:260px;"><canvas id="importanceChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:18px;margin-bottom:12px;">The uncomfortable finding</h3>
+        <p style="max-width:none;">Which crop you're growing and where explain roughly four-fifths of the variation in yield. Rainfall, temperature and pesticide use together explain the rest — real, but secondary to the structural question of <em>what</em> and <em>where</em>.</p>
+        <p style="max-width:none;">That doesn't mean climate doesn't matter. It means its effect shows up gradually, shifting the odds within a crop and country over years — which is exactly what the scatter plots below start to reveal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>The climate signal, crop by crop</h2>
+      <p>Each dot is one country-year. Warmer isn't uniformly worse — it depends heavily on the crop and its baseline climate.</p>
+    </div>
+    <div class="facet-grid">
+      <div class="facet"><h4>Maize</h4><div class="chart-box" style="height:170px;"><canvas id="facet-maize"></canvas></div></div>
+      <div class="facet"><h4>Wheat</h4><div class="chart-box" style="height:170px;"><canvas id="facet-wheat"></canvas></div></div>
+      <div class="facet"><h4>Rice, paddy</h4><div class="chart-box" style="height:170px;"><canvas id="facet-rice"></canvas></div></div>
+      <div class="facet"><h4>Soybeans</h4><div class="chart-box" style="height:170px;"><canvas id="facet-soy"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Best &amp; worst average yields</h2>
+      <p>Averaged across all crops a country grows — a blunt but telling proxy for agricultural intensity and infrastructure.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:14px;color:var(--green-deep);">Highest average yield</h3>
+        <div class="chart-box" style="height:300px;"><canvas id="topCountries"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:14px;color:var(--clay);">Lowest average yield</h3>
+        <div class="chart-box" style="height:300px;"><canvas id="bottomCountries"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Choosing a model</h2>
+      <p>Trained on 1990–2009, tested against 2010–2013 — years the model never saw — the honest way to check if it generalises.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="chart-box" style="height:240px;"><canvas id="modelChart"></canvas></div>
+      </div>
+      <div class="card">
+        <table id="modelTable">
+          <thead><tr><th>Model</th><th>R²</th><th>RMSE (t/ha)</th><th>MAE (t/ha)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p style="margin-top:16px;font-size:13px;">R² of 0.95 means the Random Forest explains 95% of yield variance on years it never trained on — the linear models cap out near 0.72, confirming the relationship is non-linear and interaction-heavy.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="predictor">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Try the model yourself</h2>
+      <p>This runs a real, 25-tree Random Forest — exported from the trained Python model and executing right here in your browser.</p>
+    </div>
+    <div class="predictor-grid">
+      <div>
+        <div class="field">
+          <label>Crop</label>
+          <select id="in-crop"></select>
+        </div>
+        <div class="field">
+          <label>Country (climate baseline)</label>
+          <select id="in-country"></select>
+        </div>
+        <div class="field">
+          <label>Year <span class="val" id="val-year"></span></label>
+          <input type="range" id="in-year" min="1990" max="2030" step="1">
+        </div>
+        <div class="field">
+          <label>Annual rainfall <span class="val" id="val-rain"></span></label>
+          <input type="range" id="in-rain" min="59" max="3142" step="1">
+        </div>
+        <div class="field">
+          <label>Average temperature <span class="val" id="val-temp"></span></label>
+          <input type="range" id="in-temp" min="1.3" max="30.65" step="0.1">
+        </div>
+        <div class="field">
+          <label>Pesticide use <span class="val" id="val-pest"></span></label>
+          <input type="range" id="in-pest" min="0" max="110276" step="10">
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Predicted yield</div>
+        <div class="result-value"><span id="out-value">—</span><span> tonnes / ha</span></div>
+        <div class="result-bar-track"><div class="result-bar-fill" id="out-bar"></div></div>
+        <div class="result-bar-labels"><span>0</span><span id="out-bar-max">—</span></div>
+        <div class="result-context" id="out-context"></div>
+        <div class="method-note">Lightweight browser model trained on the 20 highest-volume countries (others grouped as "Other"), crop type, year, rainfall, temperature and pesticide use. The full 101-country model (R²=0.95) lives in the downloadable notebook — this version trades a little precision for running with zero server, entirely in this page.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <p>Data: FAO (yield, pesticides) &amp; World Bank (rainfall, temperature), merged as the "Crop Yield Prediction Dataset" on Kaggle. Built with pandas, scikit-learn and Chart.js.</p>
+      <p><a href="https://www.kaggle.com/datasets/patelris/crop-yield-prediction-dataset" target="_blank">Original dataset ↗</a></p>
+    </div>
+  </div>
+</footer>
+
+<script id="forest-data" type="application/json">__FOREST_JSON__</script>
+<script id="dashboard-data" type="application/json">__DASHBOARD_JSON__</script>
+
+<script>
+const FOREST = JSON.parse(document.getElementById('forest-data').textContent);
+const DATA = JSON.parse(document.getElementById('dashboard-data').textContent);
+
+const COLORS = {
+  gold: '#C08A2E', goldLight:'#E9C77A', green:'#3B6B4A', greenDeep:'#2A4E36',
+  clay:'#A6462B', ink:'#212B1E', inkSoft:'#55604C', grid:'#E4DFCB'
+};
+Chart.defaults.font.family = "IBM Plex Sans";
+Chart.defaults.color = COLORS.inkSoft;
+Chart.defaults.borderColor = COLORS.grid;
+
+// ---------- HERO STATS ----------
+document.getElementById('stat-rows').textContent = DATA.dataset_stats.rows.toLocaleString();
+document.getElementById('stat-countries').textContent = DATA.dataset_stats.countries;
+document.getElementById('stat-crops').textContent = DATA.dataset_stats.crops;
+document.getElementById('stat-years').textContent = (DATA.dataset_stats.year_max - DATA.dataset_stats.year_min + 1);
+
+const yearly = DATA.yearly_global_yield;
+const first = yearly[0].yield_tons_ha, last = yearly[yearly.length-1].yield_tons_ha;
+const pctChange = (((last-first)/first)*100).toFixed(0);
+document.getElementById('hero-delta').textContent = `+${pctChange}% since ${yearly[0].year}`;
+
+// ---------- HERO SPARKLINE ----------
+new Chart(document.getElementById('heroChart'), {
+  type:'line',
+  data:{labels:yearly.map(d=>d.year), datasets:[{
+    data:yearly.map(d=>d.yield_tons_ha), borderColor:COLORS.gold, backgroundColor:'rgba(192,138,46,0.12)',
+    fill:true, tension:0.35, pointRadius:0, borderWidth:2.5
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{enabled:false}},
+    scales:{x:{display:false}, y:{display:false}}
+  }
+});
+
+// ---------- TREND CHART ----------
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{labels:yearly.map(d=>d.year), datasets:[{
+    label:'Global average yield (t/ha)', data:yearly.map(d=>d.yield_tons_ha),
+    borderColor:COLORS.green, backgroundColor:'rgba(59,107,74,0.08)', fill:true,
+    tension:0.3, pointRadius:2, pointBackgroundColor:COLORS.green, borderWidth:2
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ y:{title:{display:true,text:'tonnes / ha'}, grid:{color:COLORS.grid}}, x:{grid:{display:false}} }
+  }
+});
+
+// ---------- CROP BAR (mean ± std as range bar via error-ish visualization: use bar of mean, tooltip w/ std) ----------
+const cropData = [...DATA.yield_by_crop].sort((a,b)=>b.mean-a.mean);
+new Chart(document.getElementById('cropChart'), {
+  type:'bar',
+  data:{labels:cropData.map(d=>d.crop), datasets:[{
+    label:'Mean yield (t/ha)', data:cropData.map(d=>d.mean),
+    backgroundColor:COLORS.gold, borderRadius:3, maxBarThickness:46
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{afterLabel:(ctx)=>{
+      const d = cropData[ctx.dataIndex]; return `median ${d.median} · std ±${d.std}`;
+    }}}},
+    scales:{ y:{title:{display:true,text:'tonnes / ha'}, grid:{color:COLORS.grid}}, x:{grid:{display:false}} }
+  }
+});
+
+// ---------- IMPORTANCE CHART ----------
+const impData = [...DATA.feature_importance].sort((a,b)=>b.importance-a.importance);
+new Chart(document.getElementById('importanceChart'), {
+  type:'bar',
+  data:{labels:impData.map(d=>d.group), datasets:[{
+    data:impData.map(d=>d.importance), backgroundColor:COLORS.greenDeep, borderRadius:3
+  }]},
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ x:{title:{display:true,text:'relative importance'}, grid:{color:COLORS.grid}}, y:{grid:{display:false}} }
+  }
+});
+
+// ---------- FACET SCATTERS ----------
+function makeFacet(canvasId, points, color){
+  new Chart(document.getElementById(canvasId), {
+    type:'scatter',
+    data:{datasets:[{ data:points.map(p=>({x:p.avg_temp_c,y:p.yield_tons_ha})), backgroundColor:color, pointRadius:3 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{title:{display:true,text:'°C', font:{size:10}}, grid:{color:COLORS.grid}},
+        y:{title:{display:true,text:'t/ha', font:{size:10}}, grid:{color:COLORS.grid}}
+      }
+    }
+  });
+}
+makeFacet('facet-maize', DATA.temp_vs_yield_by_crop['Maize'], COLORS.gold);
+makeFacet('facet-wheat', DATA.temp_vs_yield_by_crop['Wheat'], COLORS.green);
+makeFacet('facet-rice', DATA.temp_vs_yield_by_crop['Rice, paddy'], COLORS.clay);
+makeFacet('facet-soy', DATA.temp_vs_yield_by_crop['Soybeans'], COLORS.greenDeep);
+
+// ---------- TOP/BOTTOM COUNTRIES ----------
+function countryBar(canvasId, rows, color){
+  new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{labels:rows.map(d=>d.country), datasets:[{ data:rows.map(d=>d.yield_tons_ha), backgroundColor:color, borderRadius:3 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{title:{display:true,text:'t/ha avg'}, grid:{color:COLORS.grid}}, y:{grid:{display:false}} }
+    }
+  });
+}
+countryBar('topCountries', [...DATA.top_countries_by_yield].reverse(), COLORS.green);
+countryBar('bottomCountries', [...DATA.bottom_countries_by_yield].reverse(), COLORS.clay);
+
+// ---------- MODEL COMPARISON ----------
+const modelData = DATA.model_comparison;
+new Chart(document.getElementById('modelChart'), {
+  type:'bar',
+  data:{labels:modelData.map(d=>d.model), datasets:[{
+    data:modelData.map(d=>d.r2), backgroundColor:modelData.map(d=>d.model==='Random Forest'?COLORS.gold:COLORS.grid.length?'#C9C2A4':COLORS.grid), borderRadius:3
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ y:{title:{display:true,text:'R² (test set)'}, min:0, max:1, grid:{color:COLORS.grid}}, x:{grid:{display:false}} }
+  }
+});
+const tbody = document.querySelector('#modelTable tbody');
+modelData.forEach(d=>{
+  const tr = document.createElement('tr');
+  if(d.model==='Random Forest') tr.className='best';
+  tr.innerHTML = `<td>${d.model}</td><td class="mono">${d.r2}</td><td class="mono">${d.rmse}</td><td class="mono">${d.mae}</td>`;
+  tbody.appendChild(tr);
+});
+
+// ================= PREDICTOR (real RF forest traversal in JS) =================
+const cropSelect = document.getElementById('in-crop');
+const countrySelect = document.getElementById('in-country');
+FOREST.crop_options.forEach(c=>{
+  const o = document.createElement('option'); o.value=c; o.textContent=c; cropSelect.appendChild(o);
+});
+FOREST.country_options.forEach(c=>{
+  const o = document.createElement('option'); o.value=c; o.textContent=c; countrySelect.appendChild(o);
+});
+cropSelect.value = 'Maize';
+countrySelect.value = FOREST.country_options[0];
+
+const yearInput = document.getElementById('in-year');
+const rainInput = document.getElementById('in-rain');
+const tempInput = document.getElementById('in-temp');
+const pestInput = document.getElementById('in-pest');
+yearInput.value = 2013;
+rainInput.value = Math.round((FOREST.feature_ranges.rainfall_mm[0]+FOREST.feature_ranges.rainfall_mm[1])/2);
+tempInput.value = ((FOREST.feature_ranges.avg_temp_c[0]+FOREST.feature_ranges.avg_temp_c[1])/2).toFixed(1);
+pestInput.value = Math.round(FOREST.feature_ranges.pesticides_tonnes[1]*0.15);
+
+const featIndex = {};
+FOREST.feature_names.forEach((name,i)=>featIndex[name]=i);
+
+function traverseTree(node, x){
+  while(!('leaf' in node)){
+    node = (x[node.f] <= node.t) ? node.l : node.r;
+  }
+  return node.leaf;
+}
+function predict(x){
+  let sum = 0;
+  for(const tree of FOREST.trees){ sum += traverseTree(tree, x); }
+  return sum / FOREST.trees.length;
+}
+function buildFeatureVector(){
+  const x = new Array(FOREST.feature_names.length).fill(0);
+  x[featIndex['year']] = Number(yearInput.value);
+  x[featIndex['rainfall_mm']] = Number(rainInput.value);
+  x[featIndex['pesticides_tonnes']] = Number(pestInput.value);
+  x[featIndex['avg_temp_c']] = Number(tempInput.value);
+  const cropKey = 'crop_' + cropSelect.value;
+  const countryKey = 'country_bucketed_' + countrySelect.value;
+  if(cropKey in featIndex) x[featIndex[cropKey]] = 1;
+  if(countryKey in featIndex) x[featIndex[countryKey]] = 1;
+  return x;
+}
+
+const cropStatsByName = {};
+DATA.yield_by_crop.forEach(d=>cropStatsByName[d.crop]=d);
+
+function updatePrediction(){
+  document.getElementById('val-year').textContent = yearInput.value;
+  document.getElementById('val-rain').textContent = Number(rainInput.value).toLocaleString()+' mm';
+  document.getElementById('val-temp').textContent = Number(tempInput.value).toFixed(1)+' °C';
+  document.getElementById('val-pest').textContent = Number(pestInput.value).toLocaleString()+' t';
+
+  const x = buildFeatureVector();
+  const pred = Math.max(0, predict(x));
+  document.getElementById('out-value').textContent = pred.toFixed(2);
+
+  const cropStat = cropStatsByName[cropSelect.value];
+  const maxScale = cropStat ? (cropStat.mean + cropStat.std*2.5) : pred*1.5;
+  const pct = Math.min(100, (pred/maxScale)*100);
+  document.getElementById('out-bar').style.width = pct+'%';
+  document.getElementById('out-bar-max').textContent = maxScale.toFixed(1)+' t/ha';
+
+  if(cropStat){
+    const diff = pred - cropStat.mean;
+    const dir = diff >= 0 ? 'above' : 'below';
+    document.getElementById('out-context').textContent =
+      `That's ${Math.abs(diff).toFixed(2)} t/ha ${dir} the historical global average for ${cropSelect.value} (${cropStat.mean} t/ha).`;
+  }
+}
+[cropSelect,countrySelect,yearInput,rainInput,tempInput,pestInput].forEach(el=>{
+  el.addEventListener('input', updatePrediction);
+});
+updatePrediction();
+</script>
+
+</body>
+</html>
