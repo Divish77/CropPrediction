@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="TerraYield — Commercial-grade precision crop yield forecasting and agronomic advisory. Calculate harvest output in kg and kg/m² using field plot dimensions, rainfall, and fertilizer inputs.">
+<meta name="theme-color" content="#1B4332">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 <title>TerraYield — Smart Crop Yield &amp; Harvest Forecasting Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,6 +105,12 @@
     font-weight:600!important;font-size:13.5px;transition:background .15s ease, transform .15s ease;
   }
   .nav-btn:hover{background:var(--green)!important;transform:translateY(-1px);}
+  @media (max-width:768px){
+    .nav-links a:not(.nav-btn){display:none;}
+    .nav-links{gap:10px;}
+    .brand-logo{font-size:17px;}
+    .brand-icon-box{width:28px;height:28px;font-size:15px;}
+  }
 
   /* ── Hero Section ── */
   .hero-section{padding:68px 0 56px;}
@@ -1866,6 +1875,7 @@ function renderRecommendations(){
 
 });
 
+renderRecommendations();
 setTimeout(renderRecommendations, 250);
 
 </script>
