@@ -170,28 +170,50 @@
     background:var(--green-light);color:var(--green-deep);padding:3px 10px;border-radius:12px;
   }
 
-  /* Unit Selector Panel */
+  /* ── Unit Selector Panel (Structured, Zero Overlap) ── */
   .unit-panel{
     background:#F8FAF6;border:1px solid var(--line);border-radius:var(--radius-md);
-    padding:16px 18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;
+    padding:18px 20px;margin-bottom:24px;display:flex;flex-direction:column;gap:16px;
   }
-  .unit-group{display:flex;flex-direction:column;gap:5px;flex:1 1 130px;min-width:130px;}
-  .unit-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--green-deep);}
+  .unit-grid-top{
+    display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;
+  }
+  @media (max-width:680px){.unit-grid-top{grid-template-columns:1fr;}}
+  .unit-divider{
+    height:1px;background:var(--line);width:100%;
+  }
+  .unit-grid-bottom{
+    display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:flex-start;
+  }
+  @media (max-width:680px){.unit-grid-bottom{grid-template-columns:1fr;}}
+  .unit-group, .dim-calc-group, .area-unit-group{
+    display:flex;flex-direction:column;gap:6px;min-width:0;
+  }
+  .unit-group label, .dim-calc-group label, .area-unit-group label{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--green-deep);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
   .unit-select{
-    padding:6px 9px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);
+    width:100%;padding:7px 10px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);
     background:#fff;font-size:12.5px;color:var(--ink);cursor:pointer;
   }
-  .dim-row{display:flex;gap:6px;align-items:center;margin-top:2px;}
+  .dim-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .dim-row input[type=number]{
-    width:72px;padding:5px 7px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);
-    font-size:12px;color:var(--ink);
+    flex:1 1 85px;min-width:75px;padding:6px 9px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);
+    font-size:12px;color:var(--ink);background:#fff;
   }
-  .dim-row span{font-size:12px;color:var(--ink-soft);}
+  .dim-row input[type=number]::placeholder{
+    color:var(--ink-muted);font-size:11.5px;
+  }
+  .dim-times{font-size:14px;color:var(--ink-soft);font-weight:600;}
   .dim-btn{
-    padding:5px 10px;border:none;border-radius:var(--radius-sm);background:var(--green-deep);
-    color:#fff;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .15s ease;
+    padding:6px 14px;border:none;border-radius:var(--radius-sm);background:var(--green-deep);
+    color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s ease;
   }
   .dim-btn:hover{background:var(--green);}
+  .area-display-text{
+    font-size:11.5px;color:var(--ink-soft);margin-top:4px;line-height:1.4;
+  }
 
   .field{margin-bottom:18px;}
   .field label{
@@ -406,48 +428,55 @@
           <span class="card-badge">Input Parameters</span>
         </div>
 
-        <!-- ── Unit Selector Panel ── -->
+        <!-- ── Unit Selector Panel (Clean, Structured, Zero Overlap) ── -->
         <div class="unit-panel">
-          <div class="unit-group">
-            <label>🌧 Rainfall unit</label>
-            <select class="unit-select" id="unit-rain">
-              <option value="mm">Millimetres (mm)</option>
-              <option value="m">Metres (m)</option>
-            </select>
-          </div>
-          <div class="unit-group">
-            <label>🌾 Yield display</label>
-            <select class="unit-select" id="unit-yield">
-              <option value="tha">t/ha — tonnes per hectare</option>
-              <option value="kg">kg — kilograms (total field)</option>
-              <option value="kgm2">kg/m² — per square metre</option>
-              <option value="q">q — quintals per hectare</option>
-            </select>
-          </div>
-          <div class="unit-group">
-            <label>⚗️ Crop Protection / Inputs</label>
-            <select class="unit-select" id="unit-pest">
-              <option value="t">Tonnes (t) — bulk metric</option>
-              <option value="kg">Kilograms (kg)</option>
-            </select>
-          </div>
-          <div class="unit-group">
-            <label>📐 Field Plot Dimensions</label>
-            <div class="dim-row">
-              <input type="number" id="field-len" placeholder="Length (m)" min="0" step="1">
-              <span>×</span>
-              <input type="number" id="field-wid" placeholder="Width (m)" min="0" step="1">
-              <button class="dim-btn" id="calc-area">Compute</button>
+          <div class="unit-grid-top">
+            <div class="unit-group">
+              <label>🌧 Rainfall unit</label>
+              <select class="unit-select" id="unit-rain">
+                <option value="mm">Millimetres (mm)</option>
+                <option value="m">Metres (m)</option>
+              </select>
             </div>
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;" id="area-display">Enter Length (m) × Width (m) to calculate total harvest</div>
+            <div class="unit-group">
+              <label>🌾 Yield display</label>
+              <select class="unit-select" id="unit-yield">
+                <option value="tha">t/ha — tonnes per hectare</option>
+                <option value="kg">kg — kilograms (field total)</option>
+                <option value="kgm2">kg/m² — per square metre</option>
+                <option value="q">q — quintals per hectare</option>
+              </select>
+            </div>
+            <div class="unit-group">
+              <label>⚗️ Crop Protection / Inputs</label>
+              <select class="unit-select" id="unit-pest">
+                <option value="t">Tonnes (t) — bulk metric</option>
+                <option value="kg">Kilograms (kg)</option>
+              </select>
+            </div>
           </div>
-          <div class="unit-group">
-            <label>🗺 Plot Area Unit</label>
-            <select class="unit-select" id="unit-area">
-              <option value="ha">Hectares (ha)</option>
-              <option value="m2">Square metres (m²)</option>
-              <option value="ac">Acres</option>
-            </select>
+
+          <div class="unit-divider"></div>
+
+          <div class="unit-grid-bottom">
+            <div class="dim-calc-group">
+              <label>📐 Field Plot Dimensions</label>
+              <div class="dim-row">
+                <input type="number" id="field-len" placeholder="Length (m)" min="0" step="1">
+                <span class="dim-times">×</span>
+                <input type="number" id="field-wid" placeholder="Width (m)" min="0" step="1">
+                <button type="button" class="dim-btn" id="calc-area">Compute Area</button>
+              </div>
+              <div id="area-display" class="area-display-text">Enter Length (m) × Width (m) to calculate total field harvest</div>
+            </div>
+            <div class="area-unit-group">
+              <label>🗺 Plot Area Unit</label>
+              <select class="unit-select" id="unit-area">
+                <option value="ha">Hectares (ha)</option>
+                <option value="m2">Square metres (m²)</option>
+                <option value="ac">Acres</option>
+              </select>
+            </div>
           </div>
         </div>
 
