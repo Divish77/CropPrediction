@@ -167,6 +167,24 @@
   .result-bar-labels{display:flex;justify-content:space-between;font-size:11px;color:#98A88C;margin-top:6px;}
   .method-note{font-size:12.5px;color:#9FB093;margin-top:22px;line-height:1.6;}
 
+  /* ── Recommendations ── */
+  .rec-section{background:var(--green-deep);color:#E8F0E5;padding:88px 0;}
+  .rec-section h2,.rec-section h3{color:#E8F0E5;}
+  .rec-section p{color:#C3D1BC;}
+  .rec-section .eyebrow{color:#A8D4A0;}
+  .rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:32px;}
+  .rec-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius-md);padding:22px 24px;}
+  .rec-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .rec-icon{font-size:22px;line-height:1;}
+  .rec-card h3{font-size:15px;color:#D6ECCE;margin:0;}
+  .rec-card p{font-size:13.5px;color:#B0C8A8;line-height:1.6;margin:0;}
+  .rec-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;letter-spacing:.04em;margin-bottom:10px;}
+  .badge-warn{background:#C08A2E22;color:#F0CE87;border:1px solid #C08A2E55;}
+  .badge-good{background:#3B6B4A33;color:#A8D4A0;border:1px solid #3B6B4A66;}
+  .badge-info{background:#2A6A9033;color:#8ECDE6;border:1px solid #2A6A9066;}
+  .rec-summary{background:rgba(0,0,0,0.2);border-radius:var(--radius-md);padding:18px 22px;margin-top:28px;font-size:13.5px;color:#C3D1BC;line-height:1.7;}
+  .rec-summary strong{color:#E8F0E5;}
+
   footer{padding:56px 0 80px;}
   footer p{font-size:13px;}
   .footer-grid{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;color:var(--ink-soft);font-size:13px;}
@@ -340,6 +358,21 @@
         <div class="method-note">Lightweight browser model trained on the 20 highest-volume countries (others grouped as "Other"), crop type, year, rainfall, temperature and pesticide use. The full 101-country model (R²=0.95) lives in the downloadable notebook — this version trades a little precision for running with zero server, entirely in this page.</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ── Smart Agricultural Recommendations ── -->
+<section class="rec-section">
+  <div class="wrap">
+    <div class="eyebrow">AI-Driven Insights</div>
+    <div class="section-head" style="margin-bottom:0;">
+      <h2 style="color:#E8F0E5;">Practical Recommendations</h2>
+      <p style="color:#C3D1BC;">Based on your selected crop, country, and environmental inputs above, the system identifies key risk factors and generates targeted guidance for sustainable agricultural planning and efficient resource use.</p>
+    </div>
+    <div class="rec-grid" id="rec-grid">
+      <!-- Cards injected by JS -->
+    </div>
+    <div class="rec-summary" id="rec-summary"></div>
   </div>
 </section>
 
@@ -572,6 +605,137 @@ function updatePrediction(){
   el.addEventListener('input', updatePrediction);
 });
 updatePrediction();
+
+// ── Recommendations Engine ──────────────────────────────────────────────────
+const CROP_PROFILES = {
+  "Cassava":              {waterNeeds:"low",  tempOpt:[22,30], rainOpt:[500,1200], pestSens:"low",  droughtRes:"high", floodSens:"high"},
+  "Maize":                {waterNeeds:"med",  tempOpt:[18,27], rainOpt:[500,800],  pestSens:"high", droughtRes:"med",  floodSens:"med"},
+  "Plantains and others": {waterNeeds:"high", tempOpt:[20,30], rainOpt:[1200,2500],pestSens:"med",  droughtRes:"low",  floodSens:"high"},
+  "Potatoes":             {waterNeeds:"high", tempOpt:[10,20], rainOpt:[500,700],  pestSens:"high", droughtRes:"low",  floodSens:"high"},
+  "Rice, paddy":          {waterNeeds:"high", tempOpt:[20,30], rainOpt:[1000,2000],pestSens:"med",  droughtRes:"low",  floodSens:"low"},
+  "Sorghum":              {waterNeeds:"low",  tempOpt:[20,35], rainOpt:[300,700],  pestSens:"low",  droughtRes:"high", floodSens:"med"},
+  "Soybeans":             {waterNeeds:"med",  tempOpt:[15,25], rainOpt:[450,700],  pestSens:"high", droughtRes:"med",  floodSens:"med"},
+  "Sweet potatoes":       {waterNeeds:"med",  tempOpt:[20,30], rainOpt:[500,1000], pestSens:"low",  droughtRes:"med",  floodSens:"med"},
+  "Wheat":                {waterNeeds:"med",  tempOpt:[10,24], rainOpt:[400,650],  pestSens:"high", droughtRes:"med",  floodSens:"med"},
+  "Yams":                 {waterNeeds:"med",  tempOpt:[25,35], rainOpt:[1000,1500],pestSens:"low",  droughtRes:"med",  floodSens:"high"}
+};
+
+function generateRecommendations(crop, country, year, rain, temp, pest, predictedYield, baseline){
+  const profile = CROP_PROFILES[crop] || {};
+  const recs = [];
+  const issues = [];
+
+  // ── Rainfall ──
+  const [rMin, rMax] = profile.rainOpt || [400, 1200];
+  if(rain < rMin * 0.8){
+    const deficit = Math.round(rMin - rain);
+    recs.push({icon:"💧", title:"Supplemental Irrigation Needed", badge:"warn",
+      text:`Rainfall (${Math.round(rain)} mm) is well below the optimal range for ${crop} (${rMin}–${rMax} mm). Consider drip or sprinkler irrigation to cover a ~${deficit} mm deficit. Prioritise water-efficient scheduling during critical growth stages.`});
+    issues.push("severe rainfall deficit");
+  } else if(rain < rMin){
+    recs.push({icon:"💧", title:"Moderate Water Stress Risk", badge:"warn",
+      text:`Rainfall is slightly below optimal for ${crop}. Supplemental irrigation during flowering and grain-fill stages can protect yield. Mulching can reduce soil moisture loss by up to 30%.`});
+    issues.push("mild water stress");
+  } else if(rain > rMax * 1.3){
+    recs.push({icon:"🌊", title:"Excess Moisture — Drainage Required", badge:"warn",
+      text:`At ${Math.round(rain)} mm, rainfall significantly exceeds the optimal range for ${crop}. Install field drainage channels or raised beds to prevent waterlogging. ${profile.floodSens === 'high' ? crop+' is highly sensitive to root rot under saturated conditions.' : ''}`});
+    issues.push("waterlogging risk");
+  } else {
+    recs.push({icon:"💧", title:"Rainfall Within Optimal Range", badge:"good",
+      text:`Current rainfall (${Math.round(rain)} mm) is well-suited to ${crop}. Maintain soil organic matter to improve water retention during dry spells between rain events.`});
+  }
+
+  // ── Temperature ──
+  const [tMin, tMax] = profile.tempOpt || [15, 28];
+  if(temp > tMax + 3){
+    recs.push({icon:"🌡️", title:"Heat Stress Alert", badge:"warn",
+      text:`Average temperature (${temp.toFixed(1)}°C) exceeds the thermal comfort zone for ${crop} (${tMin}–${tMax}°C). Shift sowing dates earlier to avoid peak heat. Use heat-tolerant varieties and consider shading nets during critical flowering periods.`});
+    issues.push("heat stress");
+  } else if(temp < tMin - 3){
+    recs.push({icon:"❄️", title:"Cold Stress Risk", badge:"warn",
+      text:`Temperature (${temp.toFixed(1)}°C) is below the optimal range for ${crop}. Use cold-hardy varieties, row covers or plastic mulch for soil warmth. Delay planting until soil temperature stabilises above ${tMin}°C.`});
+    issues.push("cold stress");
+  } else if(temp >= tMin && temp <= tMax){
+    recs.push({icon:"🌡️", title:"Ideal Temperature Conditions", badge:"good",
+      text:`Temperature (${temp.toFixed(1)}°C) sits within the optimal thermal range for ${crop}. Conditions are conducive to normal phenological development — monitor for heat events during pollen dispersal.`});
+  } else {
+    recs.push({icon:"🌡️", title:"Marginal Temperature Conditions", badge:"info",
+      text:`Temperature is near the edge of the optimal range for ${crop}. Apply mulch to stabilise soil temperature and monitor crop growth stages closely.`});
+  }
+
+  // ── Pesticide Use ──
+  if(pest < 50 && profile.pestSens === "high"){
+    recs.push({icon:"🌿", title:"Pest Management Attention Needed", badge:"warn",
+      text:`${crop} has high sensitivity to pest pressure, but current pesticide use is very low (${Math.round(pest)} t). Conduct regular scouting and adopt Integrated Pest Management (IPM): introduce beneficial insects, use pheromone traps, and apply targeted bio-pesticides as a first line of defence.`});
+    issues.push("pest vulnerability");
+  } else if(pest > 50000){
+    recs.push({icon:"⚗️", title:"Reduce Pesticide Load", badge:"warn",
+      text:`Pesticide application is very high (${pest.toLocaleString()} t). Excessive chemical use degrades soil microbiome and risks leaching into water systems. Transition to precision application guided by soil/plant sensors and rotate pesticide classes to prevent resistance buildup.`});
+    issues.push("over-application of pesticides");
+  } else {
+    recs.push({icon:"🌱", title:"Sustainable Pest Management", badge:"good",
+      text:`Current pesticide use appears balanced for the region. Maintain an IPM approach: combine crop rotation, resistant varieties, biological controls, and targeted chemical use only at economic thresholds to preserve soil health.`});
+  }
+
+  // ── Yield Gap Analysis ──
+  if(baseline && predictedYield < baseline * 0.75){
+    const gap = (baseline - predictedYield).toFixed(2);
+    recs.push({icon:"📉", title:"Significant Yield Gap Detected", badge:"warn",
+      text:`Predicted yield (${predictedYield.toFixed(2)} t/ha) is ${gap} t/ha below the historical average for ${crop}. Priority actions: improve soil fertility with balanced NPK fertilisation, verify seed variety suitability for local climate, and address the specific limiting factors flagged above.`});
+    issues.push("yield below historical average");
+  } else if(baseline && predictedYield >= baseline * 1.1){
+    recs.push({icon:"📈", title:"Above-Average Yield Projected", badge:"good",
+      text:`Projected yield exceeds the historical average for ${crop} by ${((predictedYield/baseline - 1)*100).toFixed(0)}%. Current conditions are favourable. Ensure timely harvest logistics and post-harvest storage are in place to prevent field loss.`});
+  }
+
+  // ── Sustainable Planning ──
+  const futureWarning = year > 2024;
+  recs.push({icon:"♻️", title:"Sustainable Resource Planning", badge:"info",
+    text:`${futureWarning ? `For the projected year ${Math.round(year)}: climate variability is expected to increase. ` : ``}Diversify your cropping system with ${crop} in rotation with nitrogen-fixing legumes (e.g., lentils or groundnuts) to restore soil nutrients and break pest cycles. Precision agriculture tools — soil sensors and variable-rate application — can reduce input costs by 15–25% while maintaining yields.`});
+
+  return {recs, issues};
+}
+
+function renderRecommendations(){
+  const crop    = document.getElementById('in-crop')?.value;
+  const country = document.getElementById('in-country')?.value;
+  const year    = parseFloat(document.getElementById('in-year')?.value||2000);
+  const rain    = parseFloat(document.getElementById('in-rain')?.value||800);
+  const temp    = parseFloat(document.getElementById('in-temp')?.value||20);
+  const pest    = parseFloat(document.getElementById('in-pest')?.value||1000);
+  const pred    = parseFloat(document.getElementById('out-value')?.textContent)||0;
+  const stat    = (typeof cropStatsByName !== 'undefined') ? cropStatsByName[crop] : null;
+  const baseline = stat ? stat.mean : null;
+
+  const {recs, issues} = generateRecommendations(crop, country, year, rain, temp, pest, pred, baseline);
+
+  const grid = document.getElementById('rec-grid');
+  if(!grid) return;
+  grid.innerHTML = recs.map(r => `
+    <div class="rec-card">
+      <span class="rec-badge badge-${r.badge}">${r.badge==='warn'?'⚠ Action Required':r.badge==='good'?'✓ Favourable':'ℹ Info'}</span>
+      <div class="rec-card-header">
+        <span class="rec-icon">${r.icon}</span>
+        <h3>${r.title}</h3>
+      </div>
+      <p>${r.text}</p>
+    </div>`).join('');
+
+  const summary = document.getElementById('rec-summary');
+  if(summary){
+    if(issues.length === 0){
+      summary.innerHTML = `<strong>Overall Assessment:</strong> Conditions for <strong>${crop}</strong> in <strong>${country}</strong> (${Math.round(year)}) are largely favourable. Focus on maintaining soil health, timely crop monitoring, and efficient post-harvest handling to maximise the projected ${pred.toFixed(2)} t/ha yield.`;
+    } else {
+      summary.innerHTML = `<strong>Overall Assessment:</strong> The system has identified <strong>${issues.length} limiting factor${issues.length>1?'s':''}</strong> for <strong>${crop}</strong> in <strong>${country}</strong>: <em>${issues.join(', ')}</em>. Addressing these through the targeted interventions above can bridge the yield gap and improve long-term agricultural sustainability.`;
+    }
+  }
+}
+
+['in-crop','in-country','in-year','in-rain','in-temp','in-pest'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', renderRecommendations);
+});
+setTimeout(renderRecommendations, 250);
 </script>
 
 </body>
