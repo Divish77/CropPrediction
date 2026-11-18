@@ -282,6 +282,27 @@
   .yield-ro .ro-val{font-size:16px;font-weight:600;color:#E8F0E5;font-family:'Fraunces',serif;}
   .yield-ro .ro-lbl{font-size:10px;color:#9FB39A;margin-top:2px;}
   .method-note{font-size:12px;color:#94AA90;margin-top:22px;line-height:1.6;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;}
+  /* == Model Accuracy Card == */
+  .accuracy-card{background:var(--paper-card);border:1px solid var(--line-strong);border-radius:var(--radius-lg);padding:26px 28px;box-shadow:0 4px 20px rgba(28,38,27,0.07);}
+  .accuracy-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+  .accuracy-card-header h4{font-size:15px;font-weight:700;color:var(--ink);margin:0;}
+  .accuracy-model-pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--green-light);color:var(--green-deep);padding:3px 10px;border-radius:12px;}
+  .accuracy-metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+  .acc-metric{background:#F4F8F2;border:1px solid var(--line);border-radius:var(--radius-md);padding:14px 10px;text-align:center;}
+  .acc-metric-val{font-family:'Fraunces',serif;font-size:22px;font-weight:700;line-height:1;color:var(--green-deep);}
+  .acc-metric-lbl{font-size:10.5px;color:var(--ink-muted);margin-top:5px;font-weight:600;}
+  .acc-metric-desc{font-size:10px;color:var(--ink-muted);margin-top:2px;opacity:.8;}
+  .accuracy-bar-wrap{margin:14px 0 10px;}
+  .accuracy-bar-label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);font-weight:600;margin-bottom:6px;}
+  .accuracy-bar-track{height:10px;background:#DCE9D6;border-radius:5px;overflow:hidden;}
+  .accuracy-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--green-deep),var(--green));transition:width .7s cubic-bezier(.4,0,.2,1);}
+  .accuracy-compare-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-muted);margin:14px 0 8px;}
+  .accuracy-compare-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+  .acc-row-name{font-size:12px;color:var(--ink-soft);min-width:120px;font-weight:500;}
+  .acc-row-bar-wrap{flex:1;height:7px;background:#DCE9D6;border-radius:4px;overflow:hidden;}
+  .acc-row-bar{height:100%;border-radius:4px;transition:width .5s ease;}
+  .acc-row-val{font-size:12px;font-weight:700;color:var(--ink);min-width:40px;text-align:right;}
+  .accuracy-footnote{font-size:11.5px;color:var(--ink-muted);margin-top:12px;line-height:1.5;border-top:1px solid var(--line);padding-top:10px;}
 
   /* ── Recommendations Section ── */
   .rec-section{background:var(--green-deep);color:#E8F0E5;padding:80px 0;}
@@ -511,7 +532,8 @@
         </button>
       </div>
 
-      <!-- Right Card: Live Harvest Forecast Summary Card -->
+      <!-- Right Column: Forecast + Accuracy stacked -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
       <div class="result-card" id="live-forecast-card">
         <div class="forecast-top-bar">
           <span class="forecast-live-pill">● Live Forecast</span>
@@ -528,7 +550,45 @@
         <div class="yield-readouts" id="yield-readouts"></div>
         
         <div class="method-note">Calibrated using multi-decadal agronomic observations across 101 growing regions. Dynamically incorporates crop-specific physiological thresholds, seasonal rainfall patterns, thermal tolerances, and field plot dimensions.</div>
-      </div>
+      </div><!-- end live-forecast-card -->
+
+      <!-- Model Accuracy Card -->
+      <div class="accuracy-card" id="model-accuracy-card">
+        <div class="accuracy-card-header">
+          <h4>&#9881;&#65039; Forecast Engine Accuracy</h4>
+          <span class="accuracy-model-pill" id="acc-model-name">Random Forest</span>
+        </div>
+        <div class="accuracy-metrics-grid">
+          <div class="acc-metric">
+            <div class="acc-metric-val" id="acc-r2">&mdash;</div>
+            <div class="acc-metric-lbl">R&sup2; Score</div>
+            <div class="acc-metric-desc">Variance explained</div>
+          </div>
+          <div class="acc-metric">
+            <div class="acc-metric-val" id="acc-rmse">&mdash;</div>
+            <div class="acc-metric-lbl">RMSE (t/ha)</div>
+            <div class="acc-metric-desc">Error penalty</div>
+          </div>
+          <div class="acc-metric">
+            <div class="acc-metric-val" id="acc-mae">&mdash;</div>
+            <div class="acc-metric-lbl">MAE (t/ha)</div>
+            <div class="acc-metric-desc">Avg deviation</div>
+          </div>
+        </div>
+        <div class="accuracy-bar-wrap">
+          <div class="accuracy-bar-label">
+            <span>Forecast Reliability</span>
+            <span id="acc-pct-label">&mdash;%</span>
+          </div>
+          <div class="accuracy-bar-track">
+            <div class="accuracy-bar-fill" id="acc-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="accuracy-compare-title">Model Comparison</div>
+        <div id="acc-compare-rows"></div>
+        <div class="accuracy-footnote">Validated on independent test data (2010&ndash;2013) across 101 agricultural zones never seen during training.</div>
+      </div><!-- end accuracy-card -->
+      </div><!-- end right column flex wrapper -->
     </div>
   </div>
 </section>
@@ -1643,6 +1703,45 @@ if (unitYieldEl) {
 
 
 updatePrediction();
+
+// == Model Accuracy Card ==
+function renderAccuracyCard() {
+  var models = DATA.model_comparison;
+  if (!models || !models.length) return;
+  var best = models[0];
+  var r2Pct = (best.r2 * 100).toFixed(1);
+  var nameEl = document.getElementById('acc-model-name');
+  var r2El   = document.getElementById('acc-r2');
+  var rmseEl = document.getElementById('acc-rmse');
+  var maeEl  = document.getElementById('acc-mae');
+  var pctEl  = document.getElementById('acc-pct-label');
+  var barEl  = document.getElementById('acc-bar');
+  if (nameEl) nameEl.textContent = best.model;
+  if (r2El)   r2El.textContent   = best.r2.toFixed(4);
+  if (rmseEl) rmseEl.textContent = best.rmse.toFixed(3);
+  if (maeEl)  maeEl.textContent  = best.mae.toFixed(3);
+  if (pctEl)  pctEl.textContent  = r2Pct + '%';
+  if (barEl) {
+    barEl.style.width = '0%';
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { barEl.style.width = r2Pct + '%'; });
+    });
+  }
+  var container = document.getElementById('acc-compare-rows');
+  if (!container) return;
+  var barColors = ['#1B4332','#2D6A4F','#C08A2E','#A6462B'];
+  var rows = '';
+  for (var i = 0; i < models.length; i++) {
+    var m = models[i]; var pct = (m.r2 * 100).toFixed(1); var isBest = (i === 0);
+    rows += '<div class="accuracy-compare-row">'
+      + '<span class="acc-row-name" style="font-weight:' + (isBest ? '700' : '500') + ';color:' + (isBest ? 'var(--green-deep)' : 'var(--ink-soft)') + ';">' + m.model + '</span>'
+      + '<div class="acc-row-bar-wrap"><div class="acc-row-bar" style="width:' + pct + '%;background:' + (barColors[i] || '#748570') + ';"></div></div>'
+      + '<span class="acc-row-val" style="color:' + (isBest ? 'var(--green-deep)' : 'var(--ink)') + ';">' + pct + '%</span>'
+      + '</div>';
+  }
+  container.innerHTML = rows;
+}
+renderAccuracyCard();
 
 
 
